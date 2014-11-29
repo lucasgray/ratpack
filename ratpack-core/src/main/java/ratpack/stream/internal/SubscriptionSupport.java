@@ -64,18 +64,17 @@ abstract class SubscriptionSupport<T> implements Subscription {
   }
 
   private void drainRequests() {
-    if (drainingRequests.compareAndSet(false, true)) {
-      try {
-        long n = waitingRequests.getAndSet(0);
-        if (n > 0) {
-          doRequest(n);
+	while (drainingRequests.compareAndSet(false, true)) {
+        if (waitingRequests.get() > 0) {
+            try {
+              long n = waitingRequests.getAndSet(0);
+              if (n > 0) {
+                doRequest(n);
+              }
+            } finally {
+          drainingRequests.set(false);
         }
-      } finally {
-        drainingRequests.set(false);
-      }
-      if (waitingRequests.get() > 0) {
-        drainRequests();
-      }
+	  }
     }
   }
 
